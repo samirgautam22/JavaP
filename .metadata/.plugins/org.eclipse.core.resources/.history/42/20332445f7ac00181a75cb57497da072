@@ -1,0 +1,140 @@
+package com.project.grocery.controller;
+
+
+
+
+import java.io.IOException;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.project.grocery.request.ItemEditsRequest;
+import com.project.grocery.request.ItemsCreatationRequest;
+import com.project.grocery.request.UpdatePriceRequest;
+import com.project.grocery.responce.CustomerOrder;
+import com.project.grocery.responce.ItemResponceDto;
+import com.project.grocery.responce.Responce;
+import com.project.grocery.service.ItemsService;
+
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
+import io.swagger.annotations.ApiOperation;
+
+/**
+ * @author:Samir Gautam
+ * @Version:1.0
+ * @Date:May 19, 2018
+ * 
+ */
+@RestController
+@RequestMapping(value = "api/v1/items")
+public class ItemsController {
+	
+	private static final Logger LOG = LoggerFactory.getLogger(ItemsController.class);
+	@Autowired
+	ItemsService itemsService;
+	@ApiImplicitParams({
+		@ApiImplicitParam(name="token",required=true,dataType="String",paramType="header")})
+	@RequestMapping(value="/userItems",method = RequestMethod.POST)
+	public ResponseEntity<Object> saveItems(@RequestHeader Long loginId,@RequestHeader Long userID, @RequestBody ItemsCreatationRequest request) throws IOException{	
+		LOG.debug("items cratation by user");
+		itemsService.create(loginId,userID, request);
+		 Responce responce=new Responce("Items added");
+		return new ResponseEntity<Object>(responce,HttpStatus.CREATED);
+	}
+	
+	
+	@ApiImplicitParams({
+		@ApiImplicitParam(name="token",required=true,dataType="String",paramType="header")})
+	@RequestMapping(value="/storeItems",method = RequestMethod.POST)
+	public ResponseEntity<Object> saveStoreItems(@RequestHeader Long loginId,@RequestHeader Long storeId, @RequestBody ItemsCreatationRequest request) throws IOException{	
+		LOG.debug("items cratation by user");
+		itemsService.saveStoreItems(loginId,storeId, request);
+		 Responce responce=new Responce("Items added");
+		return new ResponseEntity<Object>(responce,HttpStatus.CREATED);
+	}
+	
+	@ApiOperation(value="List All Items",notes="List All Items")
+	@RequestMapping(value="/listAll",method=RequestMethod.GET)
+	public  ResponseEntity<Object> listAllItems(){
+		LOG.debug("Request Accepted to list all items");
+		List<ItemResponceDto> items=itemsService.listAllItems();
+		return new ResponseEntity<Object>(items,HttpStatus.OK);
+	}
+	@ApiOperation(value="Items Edit",notes="Items edit")
+	@ApiImplicitParams({
+		@ApiImplicitParam(name="token",required=true,dataType="String",paramType="header")})
+	@RequestMapping(value="/editItems",method=RequestMethod.PUT)
+	public  ResponseEntity<Object> editItems(@RequestHeader Long loginId, @RequestHeader Long userId,@RequestBody ItemEditsRequest request){
+		itemsService.editItems(loginId,userId,request);
+		 Responce responce=new Responce("Items Edited");
+		return new ResponseEntity<Object>(responce,HttpStatus.OK);
+	}
+	
+	@ApiOperation(value="Items Edit",notes="Items edit")
+	@ApiImplicitParams({
+		@ApiImplicitParam(name="token",required=true,dataType="String",paramType="header")})
+	@RequestMapping(value="/listItem",method=RequestMethod.GET)
+	public  ResponseEntity<Object> listItem(@RequestHeader Long loginId,@RequestHeader Long itemId){
+		LOG.debug("Request Accepted to list all items");
+		ItemResponceDto item=itemsService.listItem(loginId,itemId);	
+		return new ResponseEntity<Object>(item,HttpStatus.OK);
+	}
+	
+	
+	@ApiOperation(value="List All Items By catagories",notes="List By catagories")
+	@RequestMapping(value="/{catagories}",method=RequestMethod.GET)
+	public  ResponseEntity<Object> listAllByCatagores(@RequestHeader String catagories){
+		LOG.debug("Request Accepted to list all items");
+		List<ItemResponceDto> items=itemsService.listAllItemsBYcatagories(catagories);	
+		return new ResponseEntity<Object>(items,HttpStatus.OK);
+	}
+	
+	@ApiOperation(value="Items Edit",notes="updatePrice")
+	@ApiImplicitParams({
+		@ApiImplicitParam(name="token",required=true,dataType="String",paramType="header")})
+	@RequestMapping(value="/updatePrice",method=RequestMethod.PUT)
+	public  ResponseEntity<Object> updatePrice(@RequestHeader Long loginId,@RequestHeader Long itemsId, @RequestHeader Long storeId,@RequestBody UpdatePriceRequest request){
+		itemsService.editItems(loginId,storeId,itemsId,request);
+		 Responce responce=new Responce("Price for this item is set");
+		return new ResponseEntity<Object>(responce,HttpStatus.OK);
+	}
+	
+	@ApiOperation(value="List All Items",notes="List All Items")
+	@RequestMapping(value="/listAllStoreItems",method=RequestMethod.GET)
+	public  ResponseEntity<Object> listAllStoreItems(@RequestHeader Long loginId,@RequestHeader Long storeId){
+		LOG.debug("Request Accepted to list all items");
+		List<ItemResponceDto> items=itemsService.listAllStoreItems(loginId,storeId);
+		return new ResponseEntity<Object>(items,HttpStatus.OK);
+	}
+	
+	
+	@ApiOperation(value="List All Items",notes="List All Items")
+	@RequestMapping(value="/listAllStoreItems",method=RequestMethod.DELETE)
+	public  ResponseEntity<Object> deleteItems(@RequestHeader Long loginId,@RequestHeader Long userId,@PathVariable("id") Long id){
+		LOG.debug("Request Accepted to delete an items");
+		itemsService.deleteItems(loginId,userId,id);
+		Responce responce=new Responce("Items Deletd");
+		return new ResponseEntity<Object>(HttpStatus.OK);
+	}
+	
+	
+	@ApiOperation(value="List All Items",notes="List All Items By price")
+	@RequestMapping(value="/listByStoreId",method=RequestMethod.GET)
+	public  ResponseEntity<Object> listAllItemsPrice(@RequestHeader Long loginId,@RequestHeader Long storeId,@RequestHeader Long customerId){
+		LOG.debug("Request Accepted to list all items by price of store");
+		List<CustomerOrder> value=itemsService.listAllStoreItemsByPrice(loginId,storeId,customerId);
+		return new ResponseEntity<Object>(value,HttpStatus.OK);
+	}
+	
+}

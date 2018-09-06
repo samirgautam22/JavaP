@@ -1,0 +1,72 @@
+package com.project.grocery.repository;
+
+import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import com.project.grocery.model.Customer;
+import com.project.grocery.model.DAddress;
+import com.project.grocery.util.AddressStatus;
+
+/**
+ * @author:Samir Gautam
+ * @Version:1.0
+ * @Date:Jun 25, 2018
+ * 
+ */
+@Repository
+public interface DAddressRepository extends JpaRepository<DAddress, Long> {
+
+	
+
+
+
+	/**
+	 * @param latatitude
+	 * @param longitude
+	 * @return
+	 */
+	List<DAddress> findAllDAddressByLatitudeAndLongitude(double latatitude, double longitude);
+
+
+	/**
+	 * @param latatitude
+	 * @param longitude
+	 * @param customer
+	 * @return
+	 */
+	List<DAddress> findAllDAddressByLatitudeAndLongitudeAndStatusNot(double latatitude, double longitude,
+			AddressStatus customer);
+
+
+	/**
+	 * @param posativeLatitude
+	 * @param negativeLatitude
+	 * @param posativeLongitude
+	 * @param negativeLongitude
+	 * @param customer
+	 * @return
+	 */
+	List<DAddress> findAllDAddressByLatitudeBetweenAndLongitudeBetweenAndStatusNot(double posativeLatitude,
+			double negativeLatitude, double posativeLongitude, double negativeLongitude, AddressStatus customer);
+
+
+	/**
+	 * @param latatitude
+	 * @param latatitude2
+	 * @param customer
+	 * @return
+	 */
+	List<DAddress> findDAddressByLatitudeAndLongitudeAndStatusNot(double latatitude, double longitude,
+			AddressStatus customer);
+
+
+	/**
+	 * @param customer
+	 * @param customer2
+	 * @return
+	 */
+	DAddress findDAddressByCustomerAndStatus(Customer customer, AddressStatus status);
+
+}

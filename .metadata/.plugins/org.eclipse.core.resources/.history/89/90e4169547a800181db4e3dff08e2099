@@ -1,0 +1,57 @@
+package com.project.grocery.responce;
+
+import java.io.Serializable;
+import java.util.List;
+
+import javax.persistence.Lob;
+
+/**
+ * @author:Samir Gautam
+ * @Version:1.0
+ * @Date:Jun 28, 2018
+ * 
+ */
+@SuppressWarnings("serial")
+public class StoreItems implements Serializable {
+	
+	private Long storeId;
+	private String storeName;
+	
+	
+
+	
+	
+	/**
+	 * @return the storeId
+	 */
+	public Long getStoreId() {
+		return storeId;
+	}
+
+	/**
+	 * @param storeId the storeId to set
+	 */
+	public void setStoreId(Long storeId) {
+		this.storeId = storeId;
+	}
+
+	/**
+	 * @return the storeName
+	 */
+	public String getStoreName() {
+		return storeName;
+	}
+
+	/**
+	 * @param storeName the storeName to set
+	 */
+	public void setStoreName(String storeName) {
+		this.storeName = storeName;
+	}
+
+	
+	
+	
+	
+
+}

@@ -1,0 +1,439 @@
+package com.project.grocery.service;
+
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import javax.transaction.Transactional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.project.grocery.dto.LocationDto;
+import com.project.grocery.dto.StoreAddressDto;
+import com.project.grocery.dto.StoreDto;
+import com.project.grocery.exception.AlreadyExitException;
+import com.project.grocery.exception.NotFoundException;
+import com.project.grocery.exception.RequiredException;
+import com.project.grocery.exception.ValidationException;
+import com.project.grocery.model.Customer;
+import com.project.grocery.model.DAddress;
+import com.project.grocery.model.Login;
+import com.project.grocery.model.Store;
+import com.project.grocery.model.StoreAddress;
+import com.project.grocery.model.User;
+import com.project.grocery.repository.CustomerRepository;
+import com.project.grocery.repository.DAddressRepository;
+import com.project.grocery.repository.LoginRepository;
+import com.project.grocery.repository.OrderRepository;
+import com.project.grocery.repository.StoreAddressRepository;
+import com.project.grocery.repository.StoreItemsRepository;
+import com.project.grocery.repository.StoreRepository;
+import com.project.grocery.repository.UserRepository;
+import com.project.grocery.request.DistanceCreatation;
+import com.project.grocery.request.PasswordEditRequest;
+import com.project.grocery.request.StoreAddressCreatation;
+import com.project.grocery.request.StoreAddressEdit;
+import com.project.grocery.request.StoreCreatationRequest;
+import com.project.grocery.request.StoreEditRequest;
+import com.project.grocery.responce.StoreAddressResponce;
+import com.project.grocery.responce.StoreItems;
+import com.project.grocery.responce.StoreResponceDto;
+import com.project.grocery.util.AddressStatus;
+import com.project.grocery.util.EmailUtility;
+import com.project.grocery.util.LoginStatus;
+import com.project.grocery.util.LoginType;
+import com.project.grocery.util.Md5Hashing;
+import com.project.grocery.util.RandomPassword;
+import com.project.grocery.util.Status;
+
+/**
+ * @author:Samir Gautam
+ * @Version:1.0
+ * @Date:May 12, 2018
+ * 
+ */
+@Service
+public class StoreService {
+
+	private static final Logger LOG = LoggerFactory.getLogger(StoreService.class);
+
+	Long itemsId;
+	
+	@Autowired
+	LoginRepository loginRepository;
+
+	@Autowired
+	LoginService loginService;
+
+	@Autowired
+	StoreRepository storeRepository;
+
+	@Autowired
+	StoreAddressRepository storeAddressRepository;
+
+	@Autowired
+	UserRepository userRepository;
+
+	@Autowired
+	CustomerRepository customerRepository;
+
+	@Autowired
+	DAddressRepository dAddressRepository;
+
+	@Autowired
+	OrderRepository orderRepository;
+
+	@Autowired
+	StoreItemsRepository storeItemsRepository;
+
+	/**
+	 * @param userId
+	 * @param storeCreatationRequest
+	 */
+	@Transactional
+	public Store saveStore(Long loginId, Long userId, StoreCreatationRequest storeCreatationRequest) {
+		LOG.debug("Message For Store Creatation");
+
+		User u = userRepository.findUserById(userId);
+		if (u == null) {
+			throw new NotFoundException("User is not found");
+		}
+
+		Login l = loginRepository.findLoginByUsername(storeCreatationRequest.getUsername());
+		if (l != null) {
+			throw new AlreadyExitException("Username Already Exits");
+		}
+
+		Store s = storeRepository.findByPhoneNoAndStatusNot(storeCreatationRequest.getPhoneNo(), Status.DELETE);
+		if (s != null) {
+			throw new AlreadyExitException("Phone no Already Exit");
+		}
+
+		Store store = new Store();
+		store.setStoreName(storeCreatationRequest.getStoreName());
+		store.setPanNo(storeCreatationRequest.getPanNo());
+		store.setPhoneNo(storeCreatationRequest.getPhoneNo());
+		store.setStatus(Status.ACTIVE);
+		store.setCreatedDate(new Date());
+		store.setCreatedBy(userId);
+		store.setUsername(storeCreatationRequest.getUsername());
+		store.setEmail(storeCreatationRequest.getEmail());
+		LOG.debug("Adding Store....");
+		Store ss = storeRepository.save(store);
+		LOG.debug("Store Added");
+		if (ss != null) {
+			List<StoreAddressCreatation> address = storeCreatationRequest.getStoreAddress();
+			if (address != null) {
+				LOG.debug("Address Adding");
+				for (StoreAddressCreatation add : address) {
+					StoreAddress addresses = new StoreAddress();
+					addresses.setDistrict(add.getDistrict());
+					addresses.setState(add.getState());
+					addresses.setLocalLavel(add.getLocalLavel());
+					addresses.setStore(ss);
+					storeAddressRepository.save(addresses);
+					LOG.debug("Address Added");
+				}
+			}
+
+			Login login = new Login();
+			try {
+				String password = RandomPassword.newPassword();
+				login.setPassword(Md5Hashing.getPw(password));
+				login.setEmail(storeCreatationRequest.getEmail());
+				login.setLoginStatus(LoginStatus.LOGOUT);
+				login.setUsername(storeCreatationRequest.getUsername());
+				login.setStore(ss);
+				login.setCreatedDate(new Date());
+				login.setStatus(Status.ACTIVE);
+				login.setLoginType(LoginType.STOER);
+				Login ll = loginRepository.save(login);
+				if (ll != null) {
+					EmailUtility.sendNewPassword(storeCreatationRequest.getEmail(), password,
+							storeCreatationRequest.getUsername());
+				}
+
+				LOG.debug("Login Added");
+			} catch (NoSuchAlgorithmException e) {
+				e.printStackTrace();
+			}
+
+		}
+		return store;
+	}
+
+	/**
+	 * @param id
+	 */
+	@Transactional
+	public void deleteCustomer(Long loginId, Long userId, Long id) {
+		LOG.debug("Deleteing Store..");
+
+		Store store = storeRepository.findStoreByIdAndStatusNot(id, Status.DELETE);
+
+		if (store == null) {
+			throw new NotFoundException("Store Not found");
+
+		}
+
+		User user = userRepository.findUserByIdAndStatusNot(userId, Status.DELETE);
+
+		if (user == null) {
+			throw new NotFoundException("User Not found");
+
+		}
+
+		Login l = loginRepository.findLoginByEmailAndStatusNot(store.getEmail(), Status.DELETE);
+		if (l == null) {
+			throw new NotFoundException("Store Not found !!");
+		}
+		l.setStatus(Status.DELETE);
+		store.setStatus(Status.DELETE);
+		LOG.debug("Store Deleted..");
+		storeRepository.save(store);
+
+	}
+
+	/**
+	 * @param storeEditRequest
+	 */
+	@Transactional
+	public Store editStore(Long storeId,Long loginId, StoreEditRequest storeEditRequest) {
+
+		LOG.debug("Request Accepted to Edit store..");
+		if (storeEditRequest.getId() == null) {
+			throw new RequiredException("User id is needed");
+		}
+
+		Store store = storeRepository.findStoreByIdAndStatusNot(storeEditRequest.getId(), Status.DELETE);
+		if (store == null) {
+			throw new NotFoundException("User not foud");
+		}
+//
+//		if (storeEditRequest.getEmail() != null) {
+//			emailDuplication(storeEditRequest.getEmail(), store);
+//		}
+
+		if (storeEditRequest.getStoreName() != null) {
+			store.setStoreName(storeEditRequest.getStoreName());
+		}
+
+		if (storeEditRequest.getEmail() != null) {
+			store.setEmail(storeEditRequest.getEmail());
+		}
+
+		if (storeEditRequest.getPanNo() != null) {
+			store.setPanNo(storeEditRequest.getPanNo());
+		}
+
+		if (storeEditRequest.getUsername() != null) {
+			store.setUsername(storeEditRequest.getUsername());
+		}
+
+		if (storeEditRequest.getPhoneNo() != null) {
+			store.setPhoneNo(storeEditRequest.getPhoneNo());
+		}
+
+//		if (storeEditRequest.getStoreAddressEdit() != null) {
+//			List<StoreAddressEdit> addressEditRequests = storeEditRequest.getStoreAddressEdit();
+//			for (StoreAddressEdit address : addressEditRequests) {
+//
+//				StoreAddress add = null;
+//				if (address.getId() == null) {
+//					add = new StoreAddress();
+//				}
+//
+//				else {
+//					add = storeAddressRepository.findStoreAddressById(address.getId());
+//				}
+//
+//				if (null != address.getDistrict()) {
+//					add.setDistrict(address.getDistrict());
+//				}
+//				if (null != address.getState()) {
+//					add.setState(address.getState());
+//				}
+//
+//				if (null != address.getLocalLavel()) {
+//					add.setLocalLavel(address.getLocalLavel());
+//				}
+//
+//				add.setStore(store);
+//				storeAddressRepository.save(add);
+//				LOG.debug("Added address.");
+//
+//			}
+//		}
+
+		return store;
+
+	}
+
+//	private void emailDuplication(String email, Store store) {
+//		LOG.debug("Check for Email dublication");
+//
+//		Store s = storeRepository.findByEmailAndStatusNot(email, Status.DELETE);
+//		if (s != null && store.getId().equals(s.getId())) {
+//
+//			throw new AlreadyExitException("Email Already Exit");
+//
+//		}
+//	}
+
+	/**
+	 * @return
+	 */
+	public List<StoreDto> listAllStores(Long loginId) {
+		LOG.debug("Request Accepted to list all stores");
+		List<Store> store = storeRepository.findAllStoreByStatusNot(Status.DELETE);
+		List<StoreDto> storeDto = new ArrayList<>();
+
+		store.stream().forEach(u -> {
+			StoreDto dto = new StoreDto();
+			dto.setId(u.getId());
+			dto.setStoreName(u.getStoreName());
+			dto.setEmail(u.getEmail());
+			dto.setPhoneNo(u.getPhoneNo());
+			dto.setPanNo(u.getPanNo());
+			dto.setUsername(u.getUsername());
+			List<StoreAddressDto> storeAddress = new ArrayList<>();
+			List<StoreAddress> addresses = u.getStoreAddress();
+			if (addresses != null) {
+				addresses.stream().forEach(a -> {
+					StoreAddressDto storeAddressDto = new StoreAddressDto();
+					storeAddressDto.setId(a.getId());
+					storeAddressDto.setDistrict(a.getDistrict());
+					storeAddressDto.setState(a.getState());
+					storeAddressDto.setLocalLavel(a.getLocalLavel());
+					storeAddress.add(storeAddressDto);
+				});
+			}
+			dto.setAddress(storeAddress);
+			storeDto.add(dto);
+		});
+		LOG.debug("All Store List is obtain");
+
+		return storeDto;
+	}
+
+	/**
+	 * @param storeId
+	 * @return
+	 */
+	public StoreResponceDto getStore(Long loginId, Long storeId) {
+		LOG.debug("Request to get Store");
+		Store store = storeRepository.findByIdAndStatusNot(storeId, Status.DELETE);
+		if (store == null) {
+			throw new NotFoundException("Store not found");
+		}
+		StoreResponceDto storeResponceDto = new StoreResponceDto();
+		storeResponceDto.setId(store.getId());
+		storeResponceDto.setStoreName(store.getStoreName());
+		storeResponceDto.setEmail(store.getEmail());
+		storeResponceDto.setPanNo(store.getPanNo());
+		storeResponceDto.setUsername(store.getUsername());
+		storeResponceDto.setPhoneNo(store.getPhoneNo());
+		List<StoreAddressResponce> addressResponces = new ArrayList<>();
+		List<StoreAddress> addresses = store.getStoreAddress();
+		if (addresses != null) {
+			addresses.stream().forEach(u -> {
+				StoreAddressResponce dd = new StoreAddressResponce();
+				dd.setId(u.getId());
+				dd.setDistrict(u.getDistrict());
+				dd.setState(u.getState());
+				dd.setLocalLavel(u.getLocalLavel());
+				addressResponces.add(dd);
+			});
+		}
+		storeResponceDto.setAddress(addressResponces);
+		LOG.debug("Store Obatin");
+		return storeResponceDto;
+	}
+
+	/**
+	 * Creataion
+	 */
+	public List<StoreItems> getStoreAddress(Long loginId, Long customerId, DistanceCreatation distanceCreatation) {
+
+		// double distance = distanceCreatation.getDistance();
+		Customer customer = customerRepository.findByIdAndStatusNot(customerId, Status.DELETE);
+		if (customer == null) {
+			throw new NotFoundException("Customer Not found !!");
+		}
+
+		List<DAddress> dadd = customer.getDaddress();
+		List<StoreItems> storeDto = new ArrayList<>();
+		LocationDto locationDto = new LocationDto();
+
+		if (dadd == null) {
+			throw new NotFoundException("Enable your Locatation");
+		}
+
+		dadd.stream().forEach(u -> {
+
+			locationDto.setLatatitude(u.getLatitude());
+			locationDto.setLongitude(u.getLongitude());
+			// double posativeLatitude = GetLocatation.getNewPosativeLatatiude(latatitude,
+			// distance);
+			// double negativeLatitude = GetLocatation.getNewNegativeLatatiude(latatitude,
+			// -distance);
+			// double posativeLongitude = GetLocatation.getPosativeLongitutde(latatitude,
+			// longitude, distance);
+			// double negativeLongitude = GetLocatation.getPosativeLongitutde(latatitude,
+			// longitude, -distance);
+
+		});
+
+		List<DAddress> da = dAddressRepository.findDAddressByLatitudeAndLongitudeAndStatusNot(
+				locationDto.getLatatitude(), locationDto.getLongitude(), AddressStatus.CUSTOMER);
+		
+		da.stream().forEach(a -> {
+			StoreItems storeItems = new StoreItems();
+			storeItems.setStoreId(a.getStore().getId());
+			storeItems.setStoreName(a.getStore().getStoreName());
+			storeItems.setLatitude(a.getLatitude());
+			storeItems.setLongitude(a.getLongitude());
+			storeItems.setPhoneNo(a.getStore().getPhoneNo());
+			storeDto.add(storeItems);
+		});
+		
+		
+		return storeDto;
+	}
+
+	@Transactional
+	public void changePassword(Long loginId, Long storeId, PasswordEditRequest passwordEditRequest) {
+
+		LOG.debug("Request Acccepted to change password");
+		if (!passwordEditRequest.getNewPassword().equals(passwordEditRequest.getConfirmNewPassword())) {
+			throw new ValidationException("New password and confrom password doesnt match");
+
+		}
+
+		Login login = loginRepository.findLoginById(loginId);
+		System.out.println("hello");
+		System.out.print("loginId");
+		if (login == null) {
+			throw new NotFoundException("Store Not found");
+		}
+		if (!storeId.equals(login.getStore().getId())) {
+			throw new ValidationException("You are not authorized");
+		}
+
+		try {
+			if (!Md5Hashing.getPw(passwordEditRequest.getOldPassword()).equals(login.getPassword())) {
+				throw new ValidationException("Old Password not match");
+			}
+			login.setPassword(Md5Hashing.getPw(passwordEditRequest.getNewPassword()));
+			loginRepository.save(login);
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		}
+
+		LOG.debug("Password Changed");
+	}
+}

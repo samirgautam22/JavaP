@@ -1,0 +1,47 @@
+package com.project.grocery.controller;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.project.grocery.request.DynamicAddressCreatation;
+import com.project.grocery.service.DAddressService;
+
+/**
+ * @author:Samir Gautam
+ * @Version:1.0
+ * @Date:Jun 25, 2018
+ * 
+ */
+@RestController
+@RequestMapping(value="api/v1/daddress")
+public class DAddressController {
+
+	private static final Logger LOG = LoggerFactory.getLogger(DAddressController.class);
+	
+	@Autowired
+	private DAddressService daddressService;
+	
+	@RequestMapping(value="/saveAddress",method=RequestMethod.POST)
+	public ResponseEntity<Object> saveDAddress(@RequestBody DynamicAddressCreatation addressCreatation){
+		LOG.debug("Request To Accept D_address");
+		
+		daddressService.saveAddress(addressCreatation);
+		return new ResponseEntity<Object>("Added",HttpStatus.CREATED);
+	}
+	
+	@RequestMapping(value="/{latatude}",method=RequestMethod.POST)
+	public ResponseEntity<Object> saveLocatation(@RequestHeader Long customerId,@RequestHeader Long loginId,@PathVariable("latatude") double latitude ){
+		daddressService.saveLatatude(latitude,customerId,loginId);
+		return new ResponseEntity<Object>(HttpStatus.CREATED);
+	}
+
+}

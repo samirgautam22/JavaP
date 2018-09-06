@@ -1,0 +1,50 @@
+package com.project.grocery.controller;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.project.grocery.request.ContactCreatationRequest;
+import com.project.grocery.responce.Responce;
+import com.project.grocery.service.ContactService;
+
+/**
+ * @author:Samir Gautam
+ * @Version:1.0
+ * @Date:Aug 27, 2018
+ * 
+ */
+@RestController
+@RequestMapping(value="api/va/contact")
+public class ContactController {
+	private static final Logger LOG = LoggerFactory.getLogger(ContactController.class);
+	
+	
+	@Autowired
+	ContactService contactService;
+	
+	
+	@RequestMapping(value="/createCustomer",method=RequestMethod.POST)
+	public ResponseEntity<Object> createCustomer(@Validated @RequestBody ContactCreatationRequest 
+			contactCreationRequest){
+		   LOG.debug("Customer Creation request");
+		   contactService.saveContact(contactCreationRequest);
+		   Responce responce=new Responce("Thanks for contacting us we will you as soon as possible.");
+		return new ResponseEntity<Object>(responce,HttpStatus.CREATED);
+	}
+	
+	public ResponseEntity<Object> deleteContact(){
+		
+		   Responce responce=new Responce("Contact Deleted");
+		return new ResponseEntity<Object>(responce,HttpStatus.CREATED);
+	}
+	
+
+}

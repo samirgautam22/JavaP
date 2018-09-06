@@ -1,0 +1,36 @@
+package com.project.grocery.service;
+
+import org.jvnet.hk2.annotations.Service;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import com.project.grocery.model.Contact;
+import com.project.grocery.repository.ContactRepository;
+import com.project.grocery.request.ContactCreatationRequest;
+
+/**
+ * @author:Samir Gautam
+ * @Version:1.0
+ * @Date:Aug 27, 2018
+ * 
+ */
+@Service
+public class ContactService {
+	
+	@Autowired
+	ContactRepository contactRepository;
+
+	/**
+	 * @param contactCreationRequest
+	 */
+	public void saveContact(ContactCreatationRequest contactCreationRequest) {
+		
+		Contact contact=new Contact();
+		contact.setEmail(contactCreationRequest.getEmail());
+		contact.setMessage(contactCreationRequest.getMessage());
+		contact.setName(contactCreationRequest.getName());
+		contactRepository.save(contact);
+			
+		
+	}
+
+}

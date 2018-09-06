@@ -1,0 +1,54 @@
+package com.project.grocery.responce;
+
+import java.io.Serializable;
+
+/**
+ * @author:Samir Gautam
+ * @Version:1.0
+ * @Date:Jun 18, 2018
+ * 
+ */
+@SuppressWarnings("serial")
+public class CustomerOrderResponce implements Serializable {
+	
+	private Long id;
+	private String orderName;
+	private Long item;
+	/**
+	 * @return the id
+	 */
+	public Long getId() {
+		return id;
+	}
+	/**
+	 * @param id the id to set
+	 */
+	public void setId(Long id) {
+		this.id = id;
+	}
+	/**
+	 * @return the orderName
+	 */
+	public String getOrderName() {
+		return orderName;
+	}
+	/**
+	 * @param orderName the orderName to set
+	 */
+	public void setOrderName(String orderName) {
+		this.orderName = orderName;
+	}
+	/**
+	 * @return the item
+	 */
+	public Long getItem() {
+		return item;
+	}
+	/**
+	 * @param item the item to set
+	 */
+	public void setItem(Long item) {
+		this.item = item;
+	}
+
+}

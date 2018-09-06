@@ -1,0 +1,69 @@
+package com.project.grocery.service;
+
+import javax.transaction.Transactional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.project.grocery.exception.NotFoundException;
+import com.project.grocery.model.DAddress;
+import com.project.grocery.model.Login;
+import com.project.grocery.repository.DAddressRepository;
+import com.project.grocery.repository.LoginRepository;
+import com.project.grocery.request.DynamicAddressCreatation;
+
+/**
+ * @author:Samir Gautam
+ * @Version:1.0
+ * @Date:Jun 25, 2018
+ * 
+ */
+@Service
+public class DAddressService{
+
+	private static final Logger LOG = LoggerFactory.getLogger(DAddressService.class);
+	/**
+	 * @param addressCreatation
+	 */
+	@Autowired
+	DAddressRepository dAddresssRepository;
+	
+	@Autowired 
+	LoginRepository loginRepository;
+	
+	@Transactional
+	public void saveAddress(DynamicAddressCreatation addressCreatation) {
+		
+		
+		LOG.debug("Dynamic Address started");
+		DAddress daddress=new DAddress();
+		daddress.setLatitude(addressCreatation.getLatitude());
+		daddress.setLongitude(addressCreatation.getLongitude());
+		System.out.println();
+		dAddresssRepository.save(daddress);
+		
+	}
+
+	/**
+	 * @param latitude
+	 */
+	@Transactional
+	public void saveLatatude(double latitude,Long customerId,Long loginId) {
+		LOG.debug("Dynamic Address started");
+		Login login=loginRepository.findLoginById(loginId);
+		if(login==null) {
+			throw new NotFoundException("Please Login")
+		}
+		DAddress daddress=new DAddress();
+		daddress.setLatitude(latitude);
+		dAddresssRepository.save(daddress);
+		
+	}
+
+	
+	
+	
+	
+}

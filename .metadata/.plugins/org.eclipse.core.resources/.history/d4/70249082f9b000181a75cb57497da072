@@ -1,0 +1,103 @@
+package com.project.grocery.model;
+
+import java.io.Serializable;
+import java.util.List;
+
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+
+/**
+ * @author:Samir Gautam
+ * @Version:1.0
+ * @Date:May 23, 2018
+ * 
+ */
+@SuppressWarnings("serial")
+@Entity
+public class District implements Serializable{
+	
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	private Long id;
+	private String district;
+	
+	
+	 @ManyToOne(cascade = CascadeType.ALL)
+	@JoinColumn(name="state_id")
+	private State state;
+	
+	@OneToMany(mappedBy="district",fetch=FetchType.LAZY)
+	private List<LocalLevel> localLevel;
+	
+	
+	/**
+	 * @param id
+	 */
+	public District(Long id) {
+		this.id=id;
+	}
+	/**
+	 * 
+	 */
+	public District() {
+		// TODO Auto-generated constructor stub
+	}
+	
+	/**
+	 * @return the localLevel
+	 */
+	public List<LocalLevel> getLocalLevel() {
+		return localLevel;
+	}
+	/**
+	 * @param localLevel the localLevel to set
+	 */
+	public void setLocalLevel(List<LocalLevel> localLevel) {
+		this.localLevel = localLevel;
+	}
+	/**
+	 * @return the id
+	 */
+	public Long getId() {
+		return id;
+	}
+	/**
+	 * @param id the id to set
+	 */
+	public void setId(Long id) {
+		this.id = id;
+	}
+	/**
+	 * @return the district
+	 */
+	public String getDistrict() {
+		return district;
+	}
+	/**
+	 * @param district the district to set
+	 */
+	public void setDistrict(String district) {
+		this.district = district;
+	}
+	/**
+	 * @return the state
+	 */
+	public State getState() {
+		return state;
+	}
+	/**
+	 * @param state the state to set
+	 */
+	public void setState(State state) {
+		this.state = state;
+	}
+
+	
+
+}

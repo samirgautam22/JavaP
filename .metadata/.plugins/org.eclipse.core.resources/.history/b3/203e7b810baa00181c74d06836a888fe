@@ -1,0 +1,16 @@
+package com.project.grocery.request;
+
+import java.io.Serializable;
+
+/**
+ * @author:Samir Gautam
+ * @Version:1.0
+ * @Date:Aug 27, 2018
+ * 
+ */
+public class ContactReply implements Serializable {
+
+	private String subject;
+	private String form;
+	private String message;
+}

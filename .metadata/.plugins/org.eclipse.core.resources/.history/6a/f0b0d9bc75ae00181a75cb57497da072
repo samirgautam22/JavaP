@@ -1,0 +1,114 @@
+package com.project.grocery.controller;
+
+
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.project.grocery.dto.UserDto;
+import com.project.grocery.request.PasswordEditRequest;
+import com.project.grocery.request.UserCreationRequest;
+import com.project.grocery.request.UserEditRequest;
+import com.project.grocery.responce.Responce;
+import com.project.grocery.responce.UserResponceDto;
+import com.project.grocery.service.UserService;
+
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
+import io.swagger.annotations.ApiOperation;
+
+/**
+ * @author:Samir Gautam
+ * @Version:1.0
+ * @Date:May 5, 2018
+ * 
+ */
+@RestController
+@RequestMapping(value="/api/v1/user")
+public class UserController {
+	
+	private static final Logger LOG = LoggerFactory.getLogger(UserController.class);
+	
+	@Autowired
+	UserService userService;
+	@ApiImplicitParams({
+		@ApiImplicitParam(name="token",required=true,dataType="String",paramType="header")})
+	@ApiOperation(value="Create users",notes="Api to create user")
+	@RequestMapping( method = RequestMethod.POST)
+	public ResponseEntity<Object> saveUser(@RequestHeader Long loginId,@RequestHeader Long userId ,@Validated @RequestBody UserCreationRequest userDto) {
+		LOG.debug("Request for user creation in accepted");
+		userService.saveUser(loginId,userId,userDto);
+		  Responce responce=new Responce("User Created");
+		LOG.debug("user is created");
+		return new ResponseEntity<Object>(responce,HttpStatus.CREATED);
+	}
+	
+
+	@ApiImplicitParams({
+		@ApiImplicitParam(name="token",required=true,dataType="String",paramType="header")})
+	@RequestMapping(value="/{id}",method=RequestMethod.DELETE)
+	@ApiOperation(value="delete users",notes="Api to delete users")
+	public ResponseEntity<Object> deletuser(@RequestHeader Long loginId,@PathVariable("id") Long id){
+		LOG.debug("Request accepted to delete user.");
+		userService.deleteUser(loginId,id);
+		 Responce responce=new Responce("User Deleted");
+		return new ResponseEntity<Object>(responce,HttpStatus.OK);
+		
+	}
+	@ApiImplicitParams({
+		@ApiImplicitParam(name="token",required=true,dataType="String",paramType="header")})
+	@ApiOperation(value="Edit users",notes="Api to edit users")
+	@RequestMapping(method=RequestMethod.PUT)
+	public ResponseEntity<Object> editUser(@RequestHeader Long loginId,@RequestHeader Long userId,@RequestBody UserEditRequest userEditRequest){
+		LOG.debug("Request accepted to edit user.");
+		userService.editUser(loginId,userId,userEditRequest);
+		
+		return new ResponseEntity<Object>(HttpStatus.OK);
+		
+		
+		
+	}
+	@ApiImplicitParams({
+		@ApiImplicitParam(name="token",required=true,dataType="String",paramType="header")})
+	@ApiOperation(value=" change password",notes="Api to change password")
+	@RequestMapping(value="/changePassword",method=RequestMethod.PUT)
+	public ResponseEntity<Object> changePassword(@RequestHeader Long loginId,@RequestHeader Long userId,
+			@RequestBody PasswordEditRequest passwordEditRequest){
+		LOG.debug("Request accepted to change password.");
+		userService.changePassword(loginId,userId,passwordEditRequest);
+		Responce responce=new Responce("Sucessfully Password changed");
+		return new ResponseEntity<Object>(responce,HttpStatus.OK);
+		
+	}
+	
+	@ApiImplicitParams({
+		@ApiImplicitParam(name="token",required=true,dataType="String",paramType="header")})
+	@RequestMapping(method=RequestMethod.GET)
+	@ApiOperation(value="List all users",notes="Api to List all users")
+	public ResponseEntity<Object> listAllUser(@RequestHeader Long loginId){
+		List<UserDto> user=userService.listAllUsers(loginId);
+		return new ResponseEntity<Object>(user,HttpStatus.OK);
+	}
+	@ApiImplicitParams({
+		@ApiImplicitParam(name="token",required=true,dataType="String",paramType="header")})
+	@ApiOperation(value="List a users",notes="Api to List a users")
+	@RequestMapping(value="/{userId}",method=RequestMethod.GET)
+	public ResponseEntity<Object> getUser(@RequestHeader Long loginId,@RequestHeader Long userId){
+		UserResponceDto user=userService.getUser(loginId,userId);
+		return new ResponseEntity<Object>(user,HttpStatus.OK);
+	}
+	
+}	
+
+

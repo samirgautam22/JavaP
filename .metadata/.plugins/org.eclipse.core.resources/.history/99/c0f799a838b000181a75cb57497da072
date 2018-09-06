@@ -1,0 +1,427 @@
+package com.project.grocery.service;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import javax.transaction.Transactional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.project.grocery.exception.AlreadyExitException;
+import com.project.grocery.exception.LoginFailException;
+import com.project.grocery.exception.NotFoundException;
+import com.project.grocery.model.Customer;
+import com.project.grocery.model.Items;
+import com.project.grocery.model.Login;
+import com.project.grocery.model.Order;
+import com.project.grocery.model.Store;
+import com.project.grocery.model.StoreItem;
+import com.project.grocery.model.User;
+import com.project.grocery.repository.CustomerRepository;
+import com.project.grocery.repository.ItemsRepository;
+import com.project.grocery.repository.LoginRepository;
+import com.project.grocery.repository.OrderRepository;
+import com.project.grocery.repository.StoreItemsRepository;
+import com.project.grocery.repository.StoreRepository;
+import com.project.grocery.repository.UserRepository;
+import com.project.grocery.request.ItemEditsRequest;
+import com.project.grocery.request.ItemsCreatationRequest;
+import com.project.grocery.request.UpdatePriceRequest;
+import com.project.grocery.responce.CustomerOrder;
+import com.project.grocery.responce.ItemResponceDto;
+import com.project.grocery.util.Base64Util;
+import com.project.grocery.util.FileUtil;
+import com.project.grocery.util.ItemsStatus;
+import com.project.grocery.util.LoginStatus;
+import com.project.grocery.util.OrderStatus;
+
+
+/**
+ * @author:Samir Gautam
+ * @Version:1.0
+ * @Date:May 19, 2018
+ * 
+ */
+@Service
+public class ItemsService {
+
+	private static final Logger LOG = LoggerFactory.getLogger(ItemsService.class);
+
+	@Autowired
+	ItemsRepository itemsRepository;
+	
+	@Autowired
+	UserRepository userRepository;
+	
+	@Autowired
+	LoginRepository loginRepository;
+	
+	@Autowired
+	StoreRepository storeReposiory;
+	
+	@Autowired
+	StoreItemsRepository storeItemReposiory;
+	
+	@Autowired
+	CustomerRepository customerRepository;
+	
+	@Autowired
+	OrderRepository orderRepository;
+	
+
+
+	/**
+	 * @param userID
+	 * @param request
+	 * @param file
+	 */
+	@Transactional
+	public Items create( Long loginId,Long userId, ItemsCreatationRequest request) {
+		LOG.debug("Items uploded by admin");
+		User user=userRepository.findUserById(userId);
+		if(user==null) {
+			throw new NotFoundException("User Not found");
+		}
+		Items items = itemsRepository.findItemsByItemName(request.getItemsName());
+		if (items != null) {
+			throw new AlreadyExitException("Items Alredy Exit");
+
+		}
+
+		Items it = new Items();
+		it.setItemName(request.getItemsName());
+		double price=request.getPrice();
+		String nPrice="Rs. "+String.valueOf(price);
+		it.setNepPrice(nPrice);
+		it.setCatagorey(request.getCategories());
+		File file = FileUtil.write(String.valueOf(new Date().getTime()).concat(".").concat("png"),
+				request.getItemsPicture());
+		it.setItemsPicture(file.getAbsolutePath());
+
+		it.setUser(new User(userId));
+
+		itemsRepository.save(it);
+		return it;
+
+	}
+
+	/**
+	 * @return
+	 */
+	public List<ItemResponceDto> listAllItems() {
+		
+		List<Items> ite=itemsRepository.findAll();
+		List<ItemResponceDto> items=new ArrayList<>();
+		ite.stream().forEach(u->{
+			ItemResponceDto responceDto=new ItemResponceDto();
+			responceDto.setId(u.getId());
+			responceDto.setItemsName(u.getItemName());
+			responceDto.setPrice(u.getNepPrice());
+			responceDto.setCategories(u.getCatagorey());
+			
+			if (u.getItemsPicture()!= null) {
+				File file = new File(u.getItemsPicture());
+				try {
+					responceDto.setItemsPicture(Base64Util.encodeFileToBase64Binary(file));
+				} catch (IOException e) {
+					e.printStackTrace();
+				} finally {
+					file.deleteOnExit();
+				}
+			}
+			items.add(responceDto);
+		});
+		return items;
+	}
+
+	/**
+	 * @param request
+	 */
+	@Transactional
+	public void editItems(Long loginId,Long userId,ItemEditsRequest request) {
+		LOG.debug("Request to edit items");
+		Login login =loginRepository.findByIdAndLoginStatus(loginId,LoginStatus.LOGGEDIN);
+		if(login==null) {
+			throw new NotFoundException("Please Login!!");
+		}
+		
+		User user =userRepository.findUserById(userId);
+		if(user==null) {
+			throw new NotFoundException("User not found");
+		}
+		Items items=itemsRepository.findItemsById(request.getId());
+		
+		if(request.getItemsName()!=null) {
+			items.setItemName(request.getItemsName());
+		}
+		
+		if(String.valueOf(request.getPrice())!=null) {
+			double price=request.getPrice();
+			String nPrice="Rs. "+String.valueOf(price);
+			items.setNepPrice(nPrice);
+
+		}
+		
+		if(request.getItemsPicture()!=null) {
+			File file = FileUtil.write(String.valueOf(new Date().getTime()).concat(".").concat("png"),
+					request.getItemsPicture());
+			items.setItemsPicture(file.getAbsolutePath());
+		}
+		LOG.debug("Sucess");
+		
+	}
+
+	/**
+	 * @param loginId
+	 * @param itemid
+	 * @return
+	 */
+	public ItemResponceDto listItem(Long loginId, Long itemid) {
+		LOG.debug("Request to list an item");
+		Login login =loginRepository.findByIdAndLoginStatus(loginId,LoginStatus.LOGGEDIN);
+		if(login==null) {
+			throw new NotFoundException("Please Login!!");
+		}
+		
+		Items items=itemsRepository.findItemsById(itemid);
+		if(items==null) {
+			throw new NotFoundException("Items Not found");
+		}
+		
+		ItemResponceDto responceDto=new ItemResponceDto();
+		responceDto.setId(items.getId());
+		responceDto.setItemsName(items.getItemName());
+		responceDto.setPrice(items.getNepPrice());
+		
+		responceDto.setItemsPicture(items.getItemsPicture());
+		LOG.debug("Sucess");
+		return responceDto;
+	}
+
+	/**
+	 * @return
+	 */
+	public List<ItemResponceDto> listAllItemsBYcatagories(String catagories) {
+		LOG.debug("Request to list all items by catagories");
+		List<Items> items=itemsRepository.findAllItemsByCatagorey(catagories);
+		if(null==items) {
+			throw new NotFoundException("Product Not found");
+		}
+		List<ItemResponceDto> responce=new ArrayList<>();
+		items.stream().forEach(u->{
+			ItemResponceDto responceDto=new ItemResponceDto();
+			responceDto.setId(u.getId());
+			responceDto.setItemsName(u.getItemName());
+			responceDto.setPrice(u.getNepPrice());
+			responceDto.setCategories(u.getCatagorey());
+			if (u.getItemsPicture()!= null) {
+				File file = new File(u.getItemsPicture());
+				try {
+					responceDto.setItemsPicture(Base64Util.encodeFileToBase64Binary(file));
+				} catch (IOException e) {
+					e.printStackTrace();
+				} finally {
+					file.deleteOnExit();
+				}
+			}
+			responce.add(responceDto);
+		});
+		LOG.debug("Sucess");
+		return responce;
+	}
+
+	/**
+	 * @param loginId
+	 * @param storeId
+	 * @param request
+	 */
+	@Transactional
+	public void editItems(Long loginId, Long storeId,Long itemsId, UpdatePriceRequest request) {
+		LOG.debug("Items price by store");
+		Store store =storeReposiory.findStoreById(storeId);
+		if(store==null) {
+			throw new NotFoundException("Store not found");
+		}
+		
+		Items it=itemsRepository.findItemsById(itemsId);
+		if(it==null) {
+			throw new NotFoundException("Items Not found");
+		}
+		
+		StoreItem ss=storeItemReposiory.findStoreItemsByStoreAndItems(new Store(storeId),new Items(itemsId));
+		if(ss!=null) {
+			LOG.debug("price is update of store for an item ");
+			double price=request.getPrice();
+			String nPrice="Rs. "+String.valueOf(price);
+			ss.setNepPrice(nPrice);
+			storeItemReposiory.save(ss);
+			
+		}else {
+			StoreItem storeItem =new StoreItem();
+			storeItem.setItemsName(it.getItemName());
+			storeItem.setItemsStatus(ItemsStatus.AVAILABLE);
+			double price=request.getPrice();
+			String nPrice="Rs. "+String.valueOf(price);
+			storeItem.setNepPrice(nPrice);
+			storeItem.setPrice(request.getPrice());
+			storeItem.setItemsPicture(it.getItemsPicture());
+			storeItem.setCategories(it.getCatagorey());
+			storeItem.setItems(it);
+			storeItem.setStore(store);
+			storeItemReposiory.save(storeItem);
+			LOG.debug("Items price by store is sucess");
+		}
+		
+		
+	}
+
+	/**
+	 * @param loginId
+	 * @param storeId
+	 * @param request
+	 */
+	public Items saveStoreItems(Long loginId, Long storeId, ItemsCreatationRequest request) {
+		LOG.debug("Items uploded by admin");
+		Store store=storeReposiory.findStoreById(storeId);
+		if(store==null) {
+			throw new NotFoundException("Store Not found");
+		}
+		Items items = itemsRepository.findItemsByItemName(request.getItemsName());
+		if (items != null) {
+			throw new AlreadyExitException("Items Alredy Exit Please Update Price");
+
+		}
+
+		Items it = new Items();
+		it.setItemName(request.getItemsName());
+		double price=request.getPrice();
+		String nPrice="Rs. "+String.valueOf(price);
+		it.setNepPrice(nPrice);
+		it.setCatagorey(request.getCategories());
+		File file = FileUtil.write(String.valueOf(new Date().getTime()).concat(".").concat("png"),
+				request.getItemsPicture());
+		it.setItemsPicture(file.getAbsolutePath());
+
+		it.setStore(new Store(storeId));
+		itemsRepository.save(it);
+		return it;
+	}
+
+	/**
+	 * @param loginId
+	 * @param storeId
+	 * @return
+	 */
+	public List<ItemResponceDto> listAllStoreItems(Long loginId, Long storeId) {
+		LOG.debug("Request to list all items of Store");
+		List<Items> items=itemsRepository.findAllItemsByStore(new Store(storeId));
+		if(null==items) {
+			throw new NotFoundException("Product Not found");
+		}
+		List<ItemResponceDto> responce=new ArrayList<>();
+		items.stream().forEach(u->{
+			ItemResponceDto responceDto=new ItemResponceDto();
+			responceDto.setId(u.getId());
+			responceDto.setItemsName(u.getItemName());
+			responceDto.setPrice(u.getNepPrice());
+			responceDto.setCategories(u.getCatagorey());
+			if (u.getItemsPicture()!= null) {
+				File file = new File(u.getItemsPicture());
+				try {
+					responceDto.setItemsPicture(Base64Util.encodeFileToBase64Binary(file));
+				} catch (IOException e) {
+					e.printStackTrace();
+				} finally {
+					file.deleteOnExit();
+				}
+			}
+			responce.add(responceDto);
+		});
+		LOG.debug("Sucess");
+		return responce;
+	}
+
+	/**
+	 * @param loginId
+	 * @param storeId
+	 * @return
+	 */
+	public List<CustomerOrder> listAllStoreItemsByPrice(Long loginId, Long storeId,Long customerId) {
+		
+		Customer customer =customerRepository.findCustomerById(customerId);
+		
+		Login login=loginRepository.findLoginById(loginId);
+			if(login==null) {
+				throw new NotFoundException("Please Login first");
+			}
+		
+		
+		if(customer==null) {
+			
+			throw new NotFoundException("Customer Not Found !!");
+		}
+		
+//		Store store=storeItemReposiory.findStoreById(storeId);
+//		if(store==null){
+//			throw new NotFoundException("Store  Not Found !!");
+//		}
+		
+		
+		List<CustomerOrder> dto=new ArrayList<>();
+		
+		List<Order> order=orderRepository.findAllOrderByCustomerAndOrderStatusNotAndOrderStatusNot(new Customer(customerId), OrderStatus.DELIVERED,OrderStatus.DELETE);
+		if(order==null) {
+			throw new NotFoundException("Sorry you have no order");
+		}
+		
+		order.stream().forEach(u->{
+			CustomerOrder customerRes=new CustomerOrder();
+			customerRes.setOrderName(u.getOrderName());
+			customerRes.setOrderId(u.getId());
+			customerRes.setItem(u.getItem());
+			Long itemsId=u.getItemsId();
+			StoreItem storeItem=storeItemReposiory.findStoreItemsByStoreAndItems(new Store(storeId), new Items(itemsId));
+			if(storeItem==null) {
+				
+			}
+			customerRes.setNepPrice(storeItem.getNepPrice());
+			dto.add(customerRes);
+		});
+		
+		return dto;
+	}
+
+	/**
+	 * @param loginId
+	 * @param userId
+	 * @param id
+	 */
+	public void deleteItems(Long loginId, Long userId, Long id) {
+		LOG.debug("Request Accepted to delete an item");
+		Login l=loginRepository.findLoginById(loginId);
+		if(l==null) {
+			
+			throw new LoginFailException("Please Login to do operation");
+		}
+		
+		User user=userRepository.findUserById(userId);
+		if(user==null) {
+			throw new NotFoundException("Sorry you have no order");
+		}
+		
+		Items items=itemsRepository.findItemsById(id);
+		if(items==null) {
+			throw new NotFoundException("Items Not found");
+		}
+		
+		itemsRepository.delete(items);
+		LOG.debug("Items Deleted");
+	}
+	
+}

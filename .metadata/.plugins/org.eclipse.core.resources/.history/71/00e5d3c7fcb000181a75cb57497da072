@@ -1,0 +1,146 @@
+package com.project.grocery.repository;
+
+import java.util.Date;
+import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import com.project.grocery.model.Customer;
+import com.project.grocery.model.Order;
+import com.project.grocery.model.Store;
+import com.project.grocery.util.OrderStatus;
+
+/**
+ * @author:Samir Gautam
+ * @Version:1.0
+ * @Date:May 13, 2018
+ * 
+ */
+@Repository
+public interface OrderRepository extends JpaRepository<Order,Long> {
+
+	/**
+	 * @param storeId
+	 * @return
+	 */
+	List<Order> findAllOrderByStoreId(Long storeId);
+
+
+
+
+	/**
+	 * @param orderId
+	 * @param delete
+	 * @return
+	 */
+	Order findOrderByIdAndOrderStatusNot(Long orderId, OrderStatus delete);
+
+
+
+	
+
+	/**
+	 * @param store
+	 * @param avialiable
+	 * @return
+	 */
+	List<Order> findOrderByStoreAndOrderStatus(Store store, OrderStatus avialiable);
+
+
+
+
+	
+
+
+
+	/**
+	 * @param orderName
+	 * @param customer
+	 * @param delete
+	 * @return
+	 */
+	Order findOrderByOrderNameAndCustomerAndOrderStatusNot(String orderName, Customer customer, OrderStatus delete);
+
+
+
+
+	
+
+
+
+	/**
+	 * @param delivered
+	 * @param string
+	 * @return
+	 */
+	List<Order> findOrderByOrderStatusNotAndOrderDate(OrderStatus delivered, Date string);
+
+
+
+
+	/**
+	 * @param delivered
+	 * @param delete
+	 * @return
+	 */
+	List<Order> findOrderByOrderStatusNotAndOrderStatusNot(OrderStatus delivered, OrderStatus delete);
+
+
+
+
+	/**
+	 * @param customer
+	 * @param delivered
+	 * @param delete
+	 * @return
+	 */
+	List<Order> findAllOrderByCustomerAndOrderStatusNotAndOrderStatusNot(Customer customer, OrderStatus delivered,
+			OrderStatus delete);
+
+
+
+
+	/**
+	 * @param customer
+	 * @param avialiable
+	 * @return
+	 */
+	List<Order> findOrderByCustomerAndOrderStatus(Customer customer, OrderStatus avialiable);
+
+
+
+
+//	/**
+//	 * @param avialiable
+//	 * @param date1
+//	 * @param store
+//	 * @return
+//	 */
+//	List<Order> findOrderByOrderStatusNotAndOrderDateAndStore(OrderStatus avialiable, Date date1, Store store);
+
+
+
+
+//	/**
+//	 * @param delivered
+//	 * @param date1
+//	 * @param store
+//	 * @return
+//	 */
+//	List<Order> findOrderByOrderStatusAndOrderDateAndStore(OrderStatus delivered, Date date1, Store store);
+//
+
+
+
+
+
+	/**
+	 * @param store
+	 * @param date1
+	 * @param avialiable
+	 * @return
+	 */
+	List<Order> findOrderByStoreAndOrderDateAndOrderStatus(Store store, Date date1, OrderStatus avialiable);
+
+}

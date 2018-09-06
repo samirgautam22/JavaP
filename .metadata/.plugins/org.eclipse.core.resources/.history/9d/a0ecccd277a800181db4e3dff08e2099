@@ -1,0 +1,39 @@
+package com.project.grocery.request;
+
+import java.io.Serializable;
+import java.util.Date;
+
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
+
+/**
+ * @author:Samir Gautam
+ * @Version:1.0
+ * @Date:Jun 23, 2018
+ * 
+ */
+@SuppressWarnings("serial")
+public class SearchRequest implements Serializable {
+	
+	private String date;
+
+	/**
+	 * @return the date
+	 */
+	public String getDate() {
+		return date;
+	}
+
+	/**
+	 * @param date the date to set
+	 */
+	public void setDate(String date) {
+		this.date = date;
+	}
+
+	
+
+	
+
+}

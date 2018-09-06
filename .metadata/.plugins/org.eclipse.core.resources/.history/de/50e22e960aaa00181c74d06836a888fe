@@ -1,0 +1,86 @@
+package com.project.grocery.service;
+
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.project.grocery.exception.NotFoundException;
+import com.project.grocery.model.Contact;
+import com.project.grocery.model.User;
+import com.project.grocery.repository.ContactRepository;
+import com.project.grocery.repository.UserRepository;
+import com.project.grocery.request.ContactCreatationRequest;
+
+/**
+ * @author:Samir Gautam
+ * @Version:1.0
+ * @Date:Aug 27, 2018
+ * 
+ */
+@Service
+public class ContactService {
+	
+	@Autowired
+	ContactRepository contactRepository;
+	
+	@Autowired
+	UserRepository userRepository;
+	
+	private static final Logger LOG = LoggerFactory.getLogger(ContactService.class);
+
+	/**
+	 * @param contactCreationRequest
+	 */
+	public void saveContact(ContactCreatationRequest contactCreationRequest) {
+		LOG.debug("contact cratation started");
+		Contact contact=new Contact();
+		contact.setEmail(contactCreationRequest.getEmail());
+		contact.setMessage(contactCreationRequest.getMessage());
+		contact.setName(contactCreationRequest.getName());
+		contactRepository.save(contact);
+		LOG.debug("contact created");	
+	}
+
+	/**
+	 * @param userId
+	 * @param id
+	 */
+	public void deleteContact(Long userId, Long id) {
+		LOG.debug("Request To delete Contact");
+		User user=userRepository.findUserById(userId);
+		if(user==null) {
+			throw new NotFoundException("Sorry You dont have a perission to delete a contact");	
+		}
+		Contact contact=contactRepository.findContactbyId(id);
+		contactRepository.delete(contact);
+		LOG.debug("Contact Deleted");
+	}
+	
+	public List<ContactResponce> listAllContact(Long userId){
+	
+		User user=userRepository.findUserById(userId);
+		if(user==null) {
+			throw new NotFoundException("Sorry You dont have a perission to view a contact");	
+		}
+		
+		List<Contact> contact=contactRepository.findAll();
+		
+		if(contact==null) {
+			throw new NotFoundException("Sorry No Contact Found");
+		}
+		
+		List<ContactResponce> contactResponce=new ArrayList<>();
+		ContactResponce responce=new ContactResponce();
+		contact.stream().forEach(->{
+		});
+		
+		
+		
+	}
+
+}

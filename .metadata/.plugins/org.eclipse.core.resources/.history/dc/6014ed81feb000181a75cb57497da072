@@ -1,0 +1,170 @@
+package com.project.grocery.controller;
+
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.project.grocery.request.OrderCreatationRequest;
+import com.project.grocery.request.SearchRequest;
+import com.project.grocery.responce.CustomerOrderResponce;
+import com.project.grocery.responce.OrderResponceDto;
+import com.project.grocery.responce.Responce;
+import com.project.grocery.responce.StoreOrderResponce;
+import com.project.grocery.service.OrderService;
+
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
+
+/**
+ * @author:Samir Gautam
+ * @Version:1.0
+ * @Date:May 13, 2018
+ * 
+ */
+@RestController
+@RequestMapping(value="/api/v1/order")
+public class OrderController {
+	
+	@Autowired
+	OrderService orderService;
+	
+	private static final Logger LOG = LoggerFactory.getLogger(OrderController.class);
+	@ApiImplicitParams({
+		@ApiImplicitParam(name="token",required=true,dataType="String",paramType="header")})
+	@RequestMapping(method=RequestMethod.POST)
+	public ResponseEntity<Object> saveOrder(@RequestHeader Long loginId,@RequestHeader Long customerId,
+			@RequestBody OrderCreatationRequest orderRequest ){
+		LOG.debug("Request Accepted To order item");
+		orderService.saveOrder(loginId,customerId,orderRequest);
+		  Responce responce=new Responce("Your Order has been Added");
+		return new ResponseEntity<Object>(responce,HttpStatus.CREATED);
+	}
+	@ApiImplicitParams({
+		@ApiImplicitParam(name="token",required=true,dataType="String",paramType="header")})
+	@RequestMapping(value="/listAllOrderAvaliable",method=RequestMethod.GET)
+	public ResponseEntity<Object> listAllOrder(@RequestHeader Long loginId){
+		LOG.debug("Request to list all Order");
+		List<OrderResponceDto> responceDto= orderService.listAllOrderAvaliable(loginId);	
+		return new ResponseEntity<Object>(responceDto,HttpStatus.OK);
+	}
+	
+	@ApiImplicitParams({
+		@ApiImplicitParam(name="token",required=true,dataType="String",paramType="header")})
+	@RequestMapping(value="/listAllOrderDeliver",method=RequestMethod.GET)
+	public ResponseEntity<Object> listAllOrderDeliver(@RequestHeader Long loginId){
+		LOG.debug("Request to list all users");
+		List<OrderResponceDto> responceDto= orderService.listAllOrderDeliver(loginId);	
+		return new ResponseEntity<Object>(responceDto,HttpStatus.OK);
+	}
+	
+	
+	
+	@ApiImplicitParams({
+		@ApiImplicitParam(name="token",required=true,dataType="String",paramType="header")})
+	@RequestMapping(value="/listAllAvaliableOrderByStore",method=RequestMethod.GET)
+	public ResponseEntity<Object> listOrdereByStore(@RequestHeader Long loginId,@RequestHeader Long storeId){
+		LOG.debug("Request accepted to List all order by store");	
+		List<StoreOrderResponce> responceDto= orderService.listAllAvaliablOrderByStore(loginId,storeId);
+
+		return new ResponseEntity<Object>(responceDto,HttpStatus.OK);
+	}
+	
+	@ApiImplicitParams({
+		@ApiImplicitParam(name="token",required=true,dataType="String",paramType="header")})
+	@RequestMapping(value="/deliverOrderByStore",method=RequestMethod.GET)
+	public ResponseEntity<Object> listAllDeliverdOrdereByStore(@RequestHeader Long loginId,@RequestHeader Long storeId){
+		LOG.debug("Request accepted to List all order by store");	
+		List<StoreOrderResponce> responceDto= orderService.deliverOrderByStore(loginId,storeId);
+		return new ResponseEntity<Object>(responceDto,HttpStatus.OK);
+	}
+	@ApiImplicitParams({
+		@ApiImplicitParam(name="token",required=true,dataType="String",paramType="header")})
+	@RequestMapping(value="/listAllCustomerOrder",method=RequestMethod.GET)
+	public ResponseEntity<Object> listAllCustomerOrder(@RequestHeader Long loginId,@RequestHeader Long customerId){
+		LOG.debug("Request to list all delivered order");
+		List<CustomerOrderResponce> responceDto= orderService.listAllCustomerOrder(loginId,customerId);
+		return new ResponseEntity<Object>(responceDto,HttpStatus.OK);
+	}
+//	
+//	@ApiImplicitParams({
+//		@ApiImplicitParam(name="token",required=true,dataType="String",paramType="header")})
+//	@RequestMapping(value="/listAllOrderDelivered",method=RequestMethod.GET)
+//	public ResponseEntity<Object> listAllDeliveredOrder(@RequestHeader Long loginId){
+//		LOG.debug("Request to list all delivered order");
+//		List<OrderResponceDto> responceDto= orderService.listAllOrder(loginId);
+//		return new ResponseEntity<Object>(responceDto,HttpStatus.OK);
+//	}
+	
+	@ApiImplicitParams({
+		@ApiImplicitParam(name="token",required=true,dataType="String",paramType="header")})
+	@RequestMapping(value="/{id}",method=RequestMethod.DELETE)
+	public ResponseEntity<Object> deleteOrder(@RequestHeader Long loginId,@PathVariable ("id") Long id){
+		LOG.debug("Request Accepted to Delete order");
+		orderService.deleteOrder(id,loginId);
+		Responce responce=new Responce("Order Deleted");
+		return new ResponseEntity<Object>(responce,HttpStatus.OK);
+	}
+	
+	
+	
+	@ApiImplicitParams({
+		@ApiImplicitParam(name="token",required=true,dataType="String",paramType="header")})
+	@RequestMapping(value="/searchAvalibleByDate",method=RequestMethod.POST)
+	public ResponseEntity<Object> searchAvaliableOrderByDate(@RequestHeader Long loginId,@RequestBody SearchRequest searchRequest){
+		LOG.debug("Request Accepted to Delete order");
+		List<OrderResponceDto> responceDto =orderService.searchAvalibleOrder(loginId,searchRequest);
+		return new ResponseEntity<Object>(responceDto,HttpStatus.OK);
+	}
+	
+	@ApiImplicitParams({
+		@ApiImplicitParam(name="token",required=true,dataType="String",paramType="header")})
+	@RequestMapping(value="/searchDeliverByDate",method=RequestMethod.POST)
+	public ResponseEntity<Object> searchDeliverOrderByDate(@RequestHeader Long loginId,@RequestBody SearchRequest searchRequest){
+		LOG.debug("Request Accepted to Delete order");
+		List<OrderResponceDto> responceDto =orderService.searchDeliverOrder(loginId,searchRequest);
+		return new ResponseEntity<Object>(responceDto,HttpStatus.OK);
+	}
+	
+	@ApiImplicitParams({
+		@ApiImplicitParam(name="token",required=true,dataType="String",paramType="header")})
+	@RequestMapping(value="/{changeStatus}",method=RequestMethod.POST)
+	public ResponseEntity<Object> changeStatus(@RequestHeader Long loginId,@RequestHeader Long storeId,
+			@PathVariable("") Long changeStatus ){
+		LOG.debug("Request to change order status");
+		orderService.changeStatus(loginId,storeId,changeStatus);
+		return new ResponseEntity<Object>(HttpStatus.OK);
+	}
+	
+	
+	@ApiImplicitParams({
+		@ApiImplicitParam(name="token",required=true,dataType="String",paramType="header")})
+	@RequestMapping(value="/searchStoreDeliverByDate",method=RequestMethod.POST)
+	public ResponseEntity<Object> searchStoreDeliverOrderByDate(@RequestHeader Long loginId,Long storeId,@RequestBody SearchRequest searchRequest){
+		LOG.debug("Request Accepted to Delete order");
+		List<OrderResponceDto> responceDto =orderService.searchStoreDeliverOrderByDate(storeId,loginId,searchRequest);
+		return new ResponseEntity<Object>(responceDto,HttpStatus.OK);
+	}
+	
+	
+	@ApiImplicitParams({
+		@ApiImplicitParam(name="token",required=true,dataType="String",paramType="header")})
+	@RequestMapping(value="/searchStoreAvaliableByDate",method=RequestMethod.POST)
+	public ResponseEntity<Object> searchStoreAvaliableByDate(@RequestHeader Long loginId,Long storeId,@RequestBody SearchRequest searchRequest){
+		LOG.debug("Request Accepted to Delete order");
+		List<OrderResponceDto> responceDto =orderService.searchStoreAvaliableOrderByDate(storeId,loginId,searchRequest);
+		return new ResponseEntity<Object>(responceDto,HttpStatus.OK);
+	}
+	
+	
+
+}
